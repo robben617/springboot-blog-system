@@ -22,9 +22,9 @@ A full-stack blog system built with Spring Boot 3 + MyBatis-Plus + MySQL 8, feat
 | 用户 | 注册、登录、登出、会话校验 | 已完成 |
 | 用户 | 个人资料修改、头像上传、用户管理（管理员） | 待开发 |
 | 文章 | 发布 / 编辑 / 删除、草稿、浏览量、分页查询 | 待开发 |
-| 分类 | 分类增删改查、排序 | 待开发 |
-| 标签 | 标签管理、文章标签多对多关联 | 待开发 |
-| 评论 | 发表评论、回复（楼中楼，`parent_id` 自关联）、管理员删除 | 待开发 |
+| 分类 | 分类增删改查（管理员）、按分类浏览、删除前校验 | 已完成 |
+| 标签 | 标签增删改查（管理员）、按标签浏览、删除自动解绑文章 | 已完成 |
+| 评论 | 发表评论、回复（两级结构，`parent_id` 自关联）、按文章展示、删除级联回复 | 已完成 |
 | 公告 | 公告发布与管理 | 待开发 |
 | 友链 | 友情链接维护 | 待开发 |
 | 公共 | 统一返回体、全局异常处理、跨域、分页、自动填充、拦截器 | 已完成 |
@@ -46,20 +46,38 @@ A full-stack blog system built with Spring Boot 3 + MyBatis-Plus + MySQL 8, feat
 │       │   ├── interceptor/         # 登录 / 管理员拦截器
 │       │   ├── mapper/              # 数据访问层
 │       │   ├── service/             # 业务层（含 impl）
-│       │   └── util/                # 统一返回、分页、密码、文件上传
+│       │   ├── util/                # 统一返回、分页、密码、文件上传
+│       │   └── vo/                  # 前端展示对象
 │       └── resources/application.yml
 ├── 需求分析说明书_修订版.docx
 ├── 数据库设计说明书.html             # 含 E-R 图、数据字典、关系说明
 ├── 博客系统E-R图.vsdx                # Visio 版 E-R 图
 ├── E-R图绘制修改说明.md
+├── 董浩-分类标签与评论模块-开发规划.md   # 接口清单与实施规划
+├── 开发踩坑与避错记录.md              # 踩坑沉淀 + 提交前自查清单
 ├── 基于SpringBoot的博客系统开发-7-9周小组分工方案.docx
 └── 任务时间顺序与代码交接流程.docx
 ```
 
+## 接口速查（分类标签 / 评论模块）
+
+| 方法 | 路径 | 权限 | 说明 |
+|---|---|---|---|
+| GET | `/categories` | 公开 | 分类列表 |
+| GET | `/categories/{id}/articles` | 公开 | 按分类浏览文章（分页） |
+| GET | `/tags` | 公开 | 标签列表 |
+| GET | `/tags/{id}/articles` | 公开 | 按标签浏览文章（分页） |
+| GET | `/comments/article/{articleId}` | 公开 | 评论展示（两级结构） |
+| POST | `/comment` | 登录 | 发表评论 / 回复（带 parentId 即回复） |
+| DELETE | `/comment/{id}` | 管理员或文章作者 | 删除评论（级联删除其回复） |
+| POST / PUT / DELETE | `/admin/category`、`/admin/tag` | 管理员 | 分类、标签管理与删除校验 |
+
 ## 快速开始
 
 1. **建库**：在 MySQL 中执行 `blog-system/sql/init.sql`（会创建 `blog_db` 与 8 张表）。
-2. **改配置**：编辑 `blog-system/src/main/resources/application.yml`，填入自己的数据库账号密码与文件上传目录。
+2. **改配置**：`application.yml` 中的数据库账号、密码、上传目录均为占位符配置，可用环境变量覆盖（推荐），或直接修改文件里的默认值：
+   - `DB_USERNAME` / `DB_PASSWORD` / `DB_URL` —— 数据库连接
+   - `FILE_UPLOAD_PATH` —— 文件上传目录（默认 `./upload`）
 3. **启动**：
 
    ```bash
@@ -77,4 +95,4 @@ A full-stack blog system built with Spring Boot 3 + MyBatis-Plus + MySQL 8, feat
 
 ## 开发进度
 
-当前处于第 7 周：后端基础框架与用户模块已落地，其余业务模块开发中。
+当前处于第 7 周：后端基础框架、用户模块、**分类标签模块、评论模块**已落地并通过编译与启动验证；文章、公告友链、文件上传模块开发中。

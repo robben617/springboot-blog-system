@@ -30,7 +30,14 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/test/**",         // 测试接口
                         "/error",
                         "/upload/**",       // 上传的静态资源（图片）
-                        "/static/**"
+                        "/static/**",
+                        // ===== 分类标签 / 评论模块的公开只读接口（游客可访问）=====
+                        "/categories",      // 分类列表
+                        "/categories/**",   // 按分类浏览文章（C3）
+                        "/tags",            // 标签列表
+                        "/tags/**",         // 按标签浏览文章（C4）
+                        "/comments/**"      // 评论展示（M3）
+                        // 注意：写操作使用单数路径 /comment、/admin/**，必须登录，不要加入放行列表
                 );
 
         // 2. 注册管理员拦截器：仅拦截 /admin/** 路径，需管理员权限
