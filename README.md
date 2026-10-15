@@ -34,7 +34,10 @@ A full-stack blog system built with Spring Boot 3 + MyBatis-Plus + MySQL 8, feat
 ```
 ├── blog-system/                     # 后端工程（Spring Boot）
 │   ├── pom.xml
-│   ├── sql/init.sql                 # 建库建表脚本（8 张表）
+│   ├── sql/init.sql                 # 建库建表脚本（8 张表，comment 含 parent_id）
+│   ├── scripts/
+│   │   ├── smoke-test.sh            # 一键冒烟：启动→50 项断言→关停（需 CONFIRM_TEST_DB=YES）
+│   │   └── api-console.html         # 单文件接口自测台（复制到 upload/ 后同源访问）
 │   └── src/main/
 │       ├── java/com/example/blog/
 │       │   ├── common/              # 常量
@@ -53,8 +56,9 @@ A full-stack blog system built with Spring Boot 3 + MyBatis-Plus + MySQL 8, feat
 ├── 数据库设计说明书.html             # 含 E-R 图、数据字典、关系说明
 ├── 博客系统E-R图.vsdx                # Visio 版 E-R 图
 ├── E-R图绘制修改说明.md
+├── 自测与验收操作指南.md              # ⭐ 怎么跑起来、怎么测、怎么看效果（含报错对照表）
 ├── 董浩-分类标签与评论模块-开发规划.md   # 接口清单与实施规划
-├── 开发踩坑与避错记录.md              # 踩坑沉淀 + 提交前自查清单
+├── 开发踩坑与避错记录.md              # 24 条真实踩坑 + 提交前自查清单
 ├── 基于SpringBoot的博客系统开发-7-9周小组分工方案.docx
 └── 任务时间顺序与代码交接流程.docx
 ```
@@ -82,10 +86,25 @@ A full-stack blog system built with Spring Boot 3 + MyBatis-Plus + MySQL 8, feat
 
    ```bash
    cd blog-system
-   mvn spring-boot:run
+   # 方式一（推荐，最稳）：先打包再运行
+   mvn -DskipTests package
+   java -jar target/blog-system-1.0.0.jar --server.port=9090
+   # 方式二：IDEA 里直接运行 BlogApplication
    ```
 
+   > 建议显式带上 `--server.port=9090`：系统环境变量 `SERVER_PORT` 会覆盖 application.yml 的端口配置。
+
 4. **验证**：访问 `GET /test/health` 应返回统一返回体的成功响应。
+
+5. **自测（可选）**：一键跑 50 项断言，或打开可视化自测台。
+
+   ```bash
+   DB_PASSWORD=你的密码 CONFIRM_TEST_DB=YES bash scripts/smoke-test.sh   # 会先清空业务表，仅限测试库
+   cp scripts/api-console.html upload/                                     # 然后访问
+   # http://localhost:9090/upload/api-console.html
+   ```
+
+   > 完整流程（含截图建议、报错对照表）见 **《自测与验收操作指南.md》**。
 
 ## 约定
 
@@ -95,4 +114,8 @@ A full-stack blog system built with Spring Boot 3 + MyBatis-Plus + MySQL 8, feat
 
 ## 开发进度
 
-当前处于第 7 周：后端基础框架、用户模块、**分类标签模块、评论模块**已落地并通过编译与启动验证；文章、公告友链、文件上传模块开发中。
+当前处于第 7 周：后端基础框架、用户模块、**分类标签模块、评论模块**已落地。
+
+- 分类标签与评论模块已通过**真机端到端验证：50 项断言全部通过**（C1–C4、M1–M4 全覆盖，含权限与业务规则）。
+- 文章、公告友链模块尚未开发；前端 Vue 工程待第 8 周启动。
+- 模块状态详见上方《功能模块》表，验证细节见《开发踩坑与避错记录.md》第五节。

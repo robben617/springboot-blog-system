@@ -96,11 +96,13 @@ CREATE TABLE `comment` (
     `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '评论ID',
     `article_id`  BIGINT       NOT NULL COMMENT '文章ID',
     `user_id`     BIGINT       NOT NULL COMMENT '评论人ID',
+    `parent_id`   BIGINT                DEFAULT NULL COMMENT '父评论ID（NULL=一级评论；非空=回复，指向同表一级评论的id，两级评论结构）',
     `content`     VARCHAR(500) NOT NULL COMMENT '评论内容',
     `deleted`     TINYINT      NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除 1-已删除',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     PRIMARY KEY (`id`),
-    KEY `idx_article_id` (`article_id`)
+    KEY `idx_article_id` (`article_id`),
+    KEY `idx_parent_id` (`parent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='评论表';
 
 -- ----------------------------

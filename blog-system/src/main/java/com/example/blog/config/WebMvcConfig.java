@@ -48,7 +48,15 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 将 /upload/** 的访问映射到本地文件上传目录
+        // ⚠️ 注意：addResourceLocations 的路径必须以 "/" 结尾！
+        // 若写成 file:./upload（缺尾斜杠），Spring 会把文件名错误拼接、定位不到资源，
+        // 访问时抛 NoResourceFoundException 并返回 500，导致图片/静态文件全部打不开。
+        // 这里统一兜底补上尾斜杠，无论配置写 ./upload 还是 ./upload/ 都能正常工作。
+        String location = "file:" + uploadPath;
+        if (!location.endsWith("/")) {
+            location = location + "/";
+        }
         registry.addResourceHandler("/upload/**")
-                .addResourceLocations("file:" + uploadPath);
+                .addResourceLocations(location);
     }
 }

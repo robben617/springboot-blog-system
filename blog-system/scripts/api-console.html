@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>博客系统 · 接口自测台（分类标签 / 评论）</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", system-ui, sans-serif; margin: 0; background: #f5f6f8; color: #222; }
+  header { background: #1f6feb; color: #fff; padding: 14px 22px; }
+  header h1 { margin: 0; font-size: 18px; }
+  header p { margin: 4px 0 0; font-size: 12px; opacity: .9; }
+  main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; }
+  .card { background: #fff; border: 1px solid #e3e6ea; border-radius: 8px; padding: 14px 16px; }
+  .card h2 { font-size: 14px; margin: 0 0 10px; color: #1f6feb; border-bottom: 1px dashed #dde1e6; padding-bottom: 6px; }
+  label { font-size: 12px; color: #555; display: block; margin: 6px 0 2px; }
+  input, textarea, select { width: 100%; padding: 6px 8px; font-size: 13px; border: 1px solid #cfd4da; border-radius: 5px; font-family: inherit; }
+  textarea { resize: vertical; min-height: 46px; }
+  button { margin-top: 8px; padding: 6px 14px; font-size: 13px; border: 0; border-radius: 5px; background: #1f6feb; color: #fff; cursor: pointer; }
+  button.gray { background: #6b7280; }
+  button.red { background: #d1242f; }
+  button:hover { opacity: .9; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  .full { grid-column: 1 / -1; }
+  pre { background: #0d1117; color: #c9d1d9; padding: 12px; border-radius: 6px; font-size: 12px; max-height: 320px; overflow: auto; margin: 0; white-space: pre-wrap; word-break: break-all; }
+  .warn { background: #fff8e1; border: 1px solid #f0d78c; color: #7a5c00; padding: 8px 12px; border-radius: 6px; font-size: 12px; margin: 0 16px; display: none; }
+  .tag { display: inline-block; background: #eef3ff; color: #1f6feb; border-radius: 10px; padding: 1px 8px; font-size: 12px; margin-right: 4px; }
+  .muted { color: #888; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>博客系统 · 接口自测台</h1>
+  <p>分类标签（C1–C4）+ 评论（M1–M4）｜ 当前登录：<span id="who">未登录</span></p>
+</header>
+<div class="warn" id="warn"></div>
+
+<main>
+  <!-- 登录 -->
+  <section class="card">
+    <h2>0. 登录（写操作需要）</h2>
+    <div class="row">
+      <div><label>用户名</label><input id="u" value="admin01"></div>
+      <div><label>密码</label><input id="p" type="password" value="123456"></div>
+    </div>
+    <button onclick="login()">登录</button>
+    <button class="gray" onclick="logout()">登出</button>
+    <p class="muted">测试账号：admin01（管理员）/ user01 / user02，密码均为 123456（需先跑一次 scripts/smoke-test.sh 生成）</p>
+  </section>
+
+  <!-- 分类 -->
+  <section class="card">
+    <h2>1. 分类（C1 管理 / C3 浏览）</h2>
+    <button onclick="api('GET','/categories')">查询分类列表</button>
+    <label>新增分类（管理员）</label>
+    <div class="row">
+      <input id="catName" placeholder="分类名，如 技术分享">
+      <input id="catSort" placeholder="排序，越小越前" value="1" style="max-width:110px">
+    </div>
+    <button onclick="addCategory()">新增分类</button>
+    <label>按分类查看已发布文章（C3）</label>
+    <div class="row">
+      <input id="catId" placeholder="分类ID">
+      <button onclick="api('GET','/categories/'+val('catId')+'/articles?pageNum=1&pageSize=10')">查询该分类文章</button>
+    </div>
+  </section>
+
+  <!-- 标签 -->
+  <section class="card">
+    <h2>2. 标签（C2 管理 / C4 浏览）</h2>
+    <button onclick="api('GET','/tags')">查询标签列表</button>
+    <label>新增标签（管理员）</label>
+    <div class="row">
+      <input id="tagName" placeholder="标签名，如 Spring Boot">
+      <button onclick="addTag()">新增标签</button>
+    </div>
+    <label>按标签查看已发布文章（C4）</label>
+    <div class="row">
+      <input id="tagId" placeholder="标签ID">
+      <button onclick="api('GET','/tags/'+val('tagId')+'/articles?pageNum=1&pageSize=10')">查询该标签文章</button>
+    </div>
+  </section>
+
+  <!-- 评论 -->
+  <section class="card">
+    <h2>3. 评论（M1 发表 / M2 回复 / M3 展示）</h2>
+    <div class="row">
+      <div><label>文章ID</label><input id="artId" value="1"></div>
+      <div><label>父评论ID（留空=一级评论）</label><input id="parentId" placeholder="留空即一级评论"></div>
+    </div>
+    <label>评论内容</label>
+    <textarea id="content">测试一下评论功能</textarea>
+    <button onclick="postComment()">发表评论 / 回复</button>
+    <button class="gray" onclick="api('GET','/comments/article/'+val('artId'))">查看该文章评论（两级树）</button>
+  </section>
+
+  <!-- 删除 -->
+  <section class="card">
+    <h2>4. 删除（M4 评论 / C1 分类 / C2 标签）</h2>
+    <div class="row">
+      <div><label>评论ID</label><input id="delCmt"></div>
+      <button class="red" onclick="api('DELETE','/comment/'+val('delCmt'))">删除评论</button>
+    </div>
+    <div class="row">
+      <div><label>分类ID</label><input id="delCat"></div>
+      <button class="red" onclick="api('DELETE','/admin/category/'+val('delCat'))">删除分类</button>
+    </div>
+    <div class="row">
+      <div><label>标签ID</label><input id="delTag"></div>
+      <button class="red" onclick="api('DELETE','/admin/tag/'+val('delTag'))">删除标签</button>
+    </div>
+    <p class="muted">业务规则：有文章的分类不能删；删标签会自动解除与文章的关联；无关用户不能删他人评论。</p>
+  </section>
+
+  <!-- 输出 -->
+  <section class="card full">
+    <h2>请求 / 响应（最后 20 条）</h2>
+    <pre id="out"></pre>
+    <button class="gray" onclick="document.getElementById('out').textContent='';">清空</button>
+  </section>
+</main>
+
+<script>
+const BASE = '';   // 同源部署（通过 /upload/ 打开时无需写域名）；跨域时改成 http://127.0.0.1:9090
+const out = document.getElementById('out');
+const val = id => document.getElementById(id).value.trim();
+
+if (location.protocol === 'file:') {
+  const w = document.getElementById('warn');
+  w.style.display = 'block';
+  w.innerHTML = '⚠️ 当前是以 file:// 直接打开的，登录所需的 Cookie 可能被浏览器拦截。<strong>推荐做法</strong>：把本文件复制到 blog-system/upload/ 目录，然后访问 <code>http://localhost:9090/upload/api-console.html</code>。';
+}
+
+function log(title, data) {
+  const t = new Date().toLocaleTimeString();
+  out.textContent = `[${t}] ${title}\n${JSON.stringify(data, null, 2)}\n\n` + out.textContent;
+  out.scrollTop = 0;
+}
+
+async function api(method, path, body) {
+  const opt = { method, credentials: 'include', headers: {} };
+  if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+  try {
+    const r = await fetch(BASE + path, opt);
+    const json = await r.json().catch(() => ({ raw: '非 JSON 响应' }));
+    log(`${method} ${path}  →  HTTP ${r.status}`, json);
+    return json;
+  } catch (e) {
+    log(`${method} ${path}  →  请求失败`, { error: String(e) });
+  }
+}
+
+async function login() {
+  const r = await api('POST', '/login', { username: val('u'), password: val('p') });
+  if (r && r.success) document.getElementById('who').textContent = val('u');
+}
+async function logout() {
+  document.getElementById('who').textContent = '未登录';
+  await api('POST', '/logout');
+}
+function addCategory() { api('POST', '/admin/category', { name: val('catName'), sort: Number(val('catSort') || 0) }); }
+function addTag()      { api('POST', '/admin/tag', { name: val('tagName') }); }
+function postComment() {
+  const body = { articleId: Number(val('artId')), content: val('content') };
+  const pid = val('parentId');
+  if (pid) body.parentId = Number(pid);
+  api('POST', '/comment', body);
+}
+</script>
+</body>
+</html>
