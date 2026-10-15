@@ -45,6 +45,7 @@
     </div>
     <button onclick="login()">登录</button>
     <button class="gray" onclick="logout()">登出</button>
+    <button class="gray" onclick="diagnose()">一键诊断（应用 / 数据库）</button>
     <p class="muted">测试账号：admin01（管理员）/ user01 / user02，密码均为 123456（需先跑一次 scripts/smoke-test.sh 生成）</p>
   </section>
 
@@ -137,6 +138,30 @@ function log(title, data) {
   out.scrollTop = 0;
 }
 
+/* 把常见错误码翻译成"下一步该干什么"，避免对着 code:500 发懵 */
+function hintFor(json) {
+  if (!json || typeof json !== 'object') return '';
+  if (json.code === 500) {
+    return '⚠️ <strong>500 系统异常 —— 九成是数据库没连上（不是代码问题）</strong><br>'
+      + '启动应用时必须设置环境变量 <code>DB_PASSWORD</code>，值 = 你本机 MySQL 的 root 密码：<br>'
+      + '&nbsp;&nbsp;· <strong>cmd 窗口</strong>：<code>set DB_PASSWORD=你的密码</code>，再 <code>java -jar target\\blog-system-1.0.0.jar</code><br>'
+      + '&nbsp;&nbsp;· <strong>IDEA</strong>：Run → Edit Configurations → Environment variables 里加 <code>DB_PASSWORD</code><br>'
+      + '&nbsp;&nbsp;· <strong>Git Bash</strong>：<code>export DB_PASSWORD=你的密码</code>（注意 cmd 用 set、bash 用 export，别混）<br>'
+      + '改了环境变量<strong>必须重启应用</strong>才生效。点下方「一键诊断」可确认。';
+  }
+  if (json.code === 401) return '⚠️ <strong>未登录</strong>：先在「0. 登录」里登录，再执行这个操作。';
+  if (json.code === 403) return '⚠️ <strong>权限不足</strong>：该操作需要管理员账号（用 admin01 登录）。';
+  if (json.code === 404) return 'ℹ️ <strong>请求的资源不存在</strong>：多半是 id 填错了。先去「查询分类列表 / 标签列表」拿到真实 id 再填（<strong>id 不是从 1 开始</strong>，重跑建库脚本会往后涨）。';
+  return '';
+}
+
+function showHint(json) {
+  const w = document.getElementById('warn');
+  const h = hintFor(json);
+  if (h) { w.style.display = 'block'; w.innerHTML = h; }
+  else { w.style.display = 'none'; w.innerHTML = ''; }
+}
+
 async function api(method, path, body) {
   const opt = { method, credentials: 'include', headers: {} };
   if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
@@ -144,10 +169,39 @@ async function api(method, path, body) {
     const r = await fetch(BASE + path, opt);
     const json = await r.json().catch(() => ({ raw: '非 JSON 响应' }));
     log(`${method} ${path}  →  HTTP ${r.status}`, json);
+    showHint(json);
     return json;
   } catch (e) {
     log(`${method} ${path}  →  请求失败`, { error: String(e) });
+    const w = document.getElementById('warn');
+    w.style.display = 'block';
+    w.innerHTML = '⚠️ <strong>请求根本没发出去</strong>：确认应用已启动（cmd / IDEA 里处于运行状态），且地址栏是 <code>http://localhost:9090/upload/api-console.html</code>。';
   }
+}
+
+/* 一键诊断：health 不查库，categories 查库；两者一对比就知道是不是数据库密码问题 */
+async function diagnose() {
+  const w = document.getElementById('warn');
+  w.style.display = 'block';
+  w.innerHTML = '诊断中…';
+  const h = await api('GET', '/test/health');
+  const c = await api('GET', '/categories');
+  const hOk = h && h.code === 200;
+  const cOk = c && c.code === 200;
+  let msg;
+  if (hOk && cOk) {
+    msg = '✅ <strong>一切正常</strong>：应用已启动且数据库已连通，可以放心测各接口。';
+  } else if (hOk && !cOk) {
+    msg = '❌ <strong>应用起来了，但数据库没连上</strong>（health=200，categories=500）。<br>'
+        + '原因：启动时没设置 <code>DB_PASSWORD</code>（或密码填错），程序用了默认值 <code>root</code> 去连库。<br>'
+        + '处理：按上面那条 500 提示设置环境变量并<strong>重启应用</strong>。';
+  } else if (!hOk) {
+    msg = '❌ <strong>应用没在运行</strong>（连 /test/health 都不通）。先启动应用，再回来点诊断。';
+  } else {
+    msg = '⚠️ 结果异常，请把请求响应里的内容发给我。';
+  }
+  w.innerHTML = msg;
+  log('一键诊断结果', { health: h, categories: c });
 }
 
 async function login() {
