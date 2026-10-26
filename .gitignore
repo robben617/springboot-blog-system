@@ -51,5 +51,8 @@ desktop.ini
 upload/
 uploads/
 
+# ---------- Vite 构建临时文件 ----------
+vite.config.js.timestamp-*
+
 # ---------- 对外交付中转目录（内容为 blog-system 的打包副本，不入库） ----------
 交付给组员/
