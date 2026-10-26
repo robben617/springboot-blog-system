@@ -8,11 +8,26 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
+
 /**
  * 分类 Mapper
  */
 @Mapper
 public interface CategoryMapper extends BaseMapper<Category> {
+
+    /**
+     * 查询全部分类，并统计每个分类下「已发布文章」的数量（前台侧边栏分类入口展示用）
+     * <p>
+     * 使用 LEFT JOIN + GROUP BY，保证没有文章的空分类也能返回（articleCount 为 0）。
+     */
+    @Select("SELECT c.id AS id, c.name AS name, c.sort AS sort, c.create_time AS createTime, "
+            + "COUNT(a.id) AS articleCount "
+            + "FROM category c "
+            + "LEFT JOIN article a ON a.category_id = c.id AND a.deleted = 0 AND a.status = 1 "
+            + "GROUP BY c.id, c.name, c.sort, c.create_time "
+            + "ORDER BY c.sort ASC, c.id ASC")
+    List<Category> selectAllWithCount();
 
     /**
      * 统计某分类下的文章数量（只统计未逻辑删除的文章）
@@ -35,9 +50,11 @@ public interface CategoryMapper extends BaseMapper<Category> {
      * @return 文章简要信息分页数据
      */
     @Select("SELECT a.id AS id, a.title AS title, a.summary AS summary, a.cover AS cover, "
-            + "a.view_count AS viewCount, a.create_time AS createTime, "
+            + "a.view_count AS viewCount, a.category_id AS categoryId, c.name AS categoryName, "
+            + "a.create_time AS createTime, "
             + "a.user_id AS authorId, u.nickname AS authorNickname "
             + "FROM article a LEFT JOIN `user` u ON u.id = a.user_id "
+            + "LEFT JOIN category c ON c.id = a.category_id "
             + "WHERE a.deleted = 0 AND a.status = 1 AND a.category_id = #{categoryId} "
             + "ORDER BY a.create_time DESC, a.id DESC")
     IPage<ArticleBriefVO> selectArticlePage(IPage<ArticleBriefVO> page, @Param("categoryId") Long categoryId);

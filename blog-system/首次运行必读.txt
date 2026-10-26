@@ -1,0 +1,143 @@
+﻿======================================================
+  博客系统（后端）源码 —— 首次运行必读
+  整理人：董浩        整理日期：2026-10-15
+======================================================
+
+一、这份代码是什么
+------------------------------------------------------
+Spring Boot 3 + MyBatis-Plus + MySQL 8 的博客系统后端。
+已完成模块：用户、分类、标签、评论（含评论回复）
+未完成模块：文章、公告、友链（由对应组员负责）
+
+二、需要提前装好的软件
+------------------------------------------------------
+1) JDK 21      命令行执行 java -version，应显示 21.x
+2) MySQL 8     MySQL 服务必须处于运行状态
+3) IDEA        Community 版即可（推荐），Maven 用 IDEA 自带的就行
+   如果 java -version 不对，先找组长要 JDK 安装包。
+
+三、三步跑起来
+------------------------------------------------------
+【第 1 步】建数据库（只需做一次）
+
+  打开命令行（CMD 或 PowerShell），先进入解压后的 blog-system 目录，
+  也就是和 pom.xml 同一层的那个目录，然后执行：
+
+      mysql -u root -p --default-character-set=utf8mb4 < sql/init.sql
+
+  回车后输入你的 MySQL 密码。
+  执行完会自动创建数据库 blog_db（8 张表）。
+  用 Navicat / DataGrip 等工具执行同一个 sql 文件也可以，效果一样。
+
+【第 2 步】把数据库密码告诉程序（最重要，漏了必然满屏 500）
+
+  密码不写进代码，而是通过环境变量传。三种方式挑一种：
+
+  (A) IDEA（推荐）
+      1. 用 IDEA 打开解压后的 blog-system 文件夹（认准有 pom.xml 的那一层）
+      2. 顶部 Run -> Edit Configurations...
+      3. 左侧选中 BlogApplication
+      4. 找到 Environment variables，点右侧图标，新增一项：
+             Name  = DB_PASSWORD
+             Value = 你自己 MySQL 的密码
+      5. Apply -> OK
+
+  (B) CMD 窗口
+      cd /d 你解压的路径\blog-system
+      set DB_PASSWORD=你的密码
+      java -jar target\blog-system-1.0.0.jar --server.port=9090
+
+  (C) Git Bash / macOS / Linux
+      export DB_PASSWORD=你的密码
+      java -jar target/blog-system-1.0.0.jar --server.port=9090
+
+  注意两点：
+    - CMD 用 set、Git Bash 用 export，不能混用；
+    - 环境变量只对当前窗口有效，换个窗口就得重新设。
+
+【第 3 步】启动
+
+  在 IDEA 里找到：
+      src/main/java/com/example/blog/BlogApplication.java
+  点左边绿色三角运行。
+  控制台出现下面这行就是成功了：
+
+      Started BlogApplication in x.xxx seconds
+
+四、确认是否真的跑通
+------------------------------------------------------
+浏览器打开：
+    http://localhost:9090/test/health
+看到 {"code":200,...} -> 说明进程起来了。
+
+再打开：
+    http://localhost:9090/categories
+  · 返回 {"code":200,...,"data":[...]}          -> 完全正常
+  · 返回 {"code":500,"msg":"系统异常，请联系管理员"} -> 数据库没连上，
+      回头检查第 2 步的密码有没有设置对（这是最常见的问题）
+
+记住：/test/health 只说明进程活着，它不查数据库；必须用 /categories
+这种查库接口才能确认数据库通了。
+
+五、想看得更直观（可选）
+------------------------------------------------------
+浏览器打开：
+    http://localhost:9090/upload/api-console.html
+
+这是一个接口自测页面，可以在网页上点按钮测：登录、查分类标签、
+发评论、回复评论等。打开前项目必须是启动状态。
+
+页面还带一个「一键诊断」按钮，会自动告诉你应用有没有起来、
+数据库有没有连上。
+
+如果提示文件不存在，就把本包 scripts/api-console.html 复制到
+blog-system/upload/ 目录下，再访问上面的地址。
+
+六、自带的测试账号（密码都是 123456）
+------------------------------------------------------
+    admin01    管理员
+    user01     普通用户（文章作者）
+    user02     普通用户
+
+七、常见报错对照
+------------------------------------------------------
+1. 启动报 "Port 9090 was already in use"
+   端口被占用（可能你已经开着一个）。关掉旧的，或换端口启动。
+
+2. 所有查库接口都返回 {"code":500,"msg":"系统异常"}
+   数据库没连上。九成是第 2 步的密码没设对，或设在了另一个窗口 /
+   设完没重启应用。改了环境变量必须重启才生效。
+
+3. 报 "Unknown database 'blog_db'"
+   第 1 步的建库没执行成功，重新执行一遍。
+
+4. 报 "Unknown column 'c.parent_id'"
+   你用的建库脚本是旧版本。请用本压缩包里的 sql/init.sql 重新执行。
+
+5. 在 Git Bash 里执行 mvn 报 "找不到或无法加载主类 ... Launcher"
+   这是 Git Bash 调用 Windows 版 Maven 的已知问题。
+   改用 IDEA 右侧的 Maven 面板，或在 CMD / PowerShell 里执行 mvn。
+
+6. 接口返回 {"code":404,"msg":"分类不存在"} / "标签不存在"
+   不是接口坏了，是 URL 里的 id 填错了。分类 id 要先看
+   GET /categories 的返回（id 不一定是从 1 开始）。
+
+八、关于 Git / GitHub
+------------------------------------------------------
+本包是"解压即用"的完整源码，不需要 Git 也能正常运行。
+（如果后续要统一提交代码给组长，另行沟通方式。）
+
+九、目录说明
+------------------------------------------------------
+blog-system/
+  ├─ pom.xml                      Maven 依赖配置
+  ├─ sql/init.sql                 建库脚本（8 张表，含评论回复字段）
+  ├─ src/main/java/...            后端源码
+  ├─ src/main/resources/
+  │     application.yml           配置（数据库账号等，密码用环境变量传）
+  ├─ scripts/
+  │     api-console.html          接口自测页面（可选）
+  │     smoke-test.sh             一键冒烟测试脚本（可选）
+  └─ 首次运行必读.txt              本文件
+
+有问题直接联系董浩。

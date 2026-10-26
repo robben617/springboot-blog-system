@@ -3,6 +3,8 @@ package com.example.blog.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.blog.dto.CommentDTO;
 import com.example.blog.entity.Comment;
+import com.example.blog.util.PageResult;
+import com.example.blog.vo.AdminCommentVO;
 import com.example.blog.vo.CommentVO;
 
 import java.util.List;
@@ -37,4 +39,14 @@ public interface CommentService extends IService<Comment> {
      * @param operatorRole 当前登录用户角色
      */
     void deleteComment(Long commentId, Long operatorId, Integer operatorRole);
+
+    /**
+     * 管理员评论分页列表（平铺展示全部评论，含回复）
+     *
+     * @param pageNum   页码
+     * @param pageSize  每页大小
+     * @param keyword   搜索关键词（匹配评论内容 / 评论人昵称 / 文章标题），可为 null
+     * @param articleId 只看指定文章下的评论，可为 null
+     */
+    PageResult<AdminCommentVO> pageAdminComments(Long pageNum, Long pageSize, String keyword, Long articleId);
 }

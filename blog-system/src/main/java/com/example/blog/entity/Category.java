@@ -31,4 +31,8 @@ public class Category implements Serializable {
     /** 创建时间 */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
+
+    /** 该分类下已发布文章数量（非数据库字段，仅前台分类入口展示用） */
+    @TableField(exist = false)
+    private Integer articleCount;
 }

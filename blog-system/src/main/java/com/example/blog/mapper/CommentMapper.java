@@ -1,7 +1,9 @@
 package com.example.blog.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.blog.entity.Comment;
+import com.example.blog.vo.AdminCommentVO;
 import com.example.blog.vo.CommentVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -58,4 +60,42 @@ public interface CommentMapper extends BaseMapper<Comment> {
             + "FROM `comment` c LEFT JOIN `user` u ON u.id = c.user_id "
             + "WHERE c.id = #{id} AND c.deleted = 0")
     CommentVO selectVoById(@Param("id") Long id);
+
+    /**
+     * 管理员评论分页列表（平铺展示全部评论，含回复）
+     * <p>
+     * keyword 同时模糊匹配评论内容、评论人昵称、所属文章标题；
+     * articleId 非空时只看该文章下的评论。
+     *
+     * @param page      分页对象（由 MyBatis-Plus 分页插件自动改写 SQL）
+     * @param keyword   搜索关键词（可为 null）
+     * @param articleId 文章筛选（可为 null）
+     */
+    @Select("<script>"
+            + "SELECT c.id AS id, c.article_id AS articleId, a.title AS articleTitle, "
+            + "c.user_id AS userId, c.parent_id AS parentId, c.content AS content, "
+            + "c.create_time AS createTime, u.nickname AS userNickname, u.avatar AS userAvatar "
+            + "FROM `comment` c "
+            + "LEFT JOIN `user` u ON u.id = c.user_id "
+            + "LEFT JOIN article a ON a.id = c.article_id "
+            + "WHERE c.deleted = 0 "
+            + "<if test='articleId != null'>"
+            + "AND c.article_id = #{articleId} "
+            + "</if>"
+            + "<if test='keyword != null and keyword != \"\"'>"
+            + "AND (c.content LIKE CONCAT('%', #{keyword}, '%') "
+            + "OR u.nickname LIKE CONCAT('%', #{keyword}, '%') "
+            + "OR a.title LIKE CONCAT('%', #{keyword}, '%')) "
+            + "</if>"
+            + "ORDER BY c.create_time DESC, c.id DESC"
+            + "</script>")
+    IPage<AdminCommentVO> selectAdminPage(IPage<AdminCommentVO> page,
+                                          @Param("keyword") String keyword,
+                                          @Param("articleId") Long articleId);
+
+    /**
+     * 统计指定用户发表的评论数量（供个人中心使用）
+     */
+    @Select("SELECT COUNT(*) FROM `comment` WHERE deleted = 0 AND user_id = #{userId}")
+    long countByUserId(@Param("userId") Long userId);
 }

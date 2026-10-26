@@ -40,4 +40,7 @@ public class ArticleBriefVO implements Serializable {
 
     /** 作者昵称 */
     private String authorNickname;
+
+    /** 分类名称（列表卡片展示所属分类） */
+    private String categoryName;
 }

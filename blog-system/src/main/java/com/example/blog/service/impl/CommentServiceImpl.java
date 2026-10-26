@@ -1,6 +1,8 @@
 package com.example.blog.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.blog.common.Constants;
 import com.example.blog.dto.CommentDTO;
@@ -8,6 +10,9 @@ import com.example.blog.entity.Comment;
 import com.example.blog.exception.BusinessException;
 import com.example.blog.mapper.CommentMapper;
 import com.example.blog.service.CommentService;
+import com.example.blog.util.PageResult;
+import com.example.blog.util.PageUtils;
+import com.example.blog.vo.AdminCommentVO;
 import com.example.blog.vo.CommentVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -115,6 +120,20 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         // 业务规则：删除评论时一并删除其回复（先删子回复，再删自身；两者都用逻辑删除）
         remove(new LambdaQueryWrapper<Comment>().eq(Comment::getParentId, commentId));
         removeById(commentId);
+    }
+
+    @Override
+    public PageResult<AdminCommentVO> pageAdminComments(Long pageNum, Long pageSize,
+                                                         String keyword, Long articleId) {
+        String kw = keyword == null ? null : keyword.trim();
+        if (kw != null && kw.isEmpty()) {
+            kw = null;
+        }
+        Page<AdminCommentVO> page = new Page<>(
+                PageUtils.normalizePageNum(pageNum),
+                PageUtils.normalizePageSize(pageSize));
+        IPage<AdminCommentVO> result = baseMapper.selectAdminPage(page, kw, articleId);
+        return PageUtils.convert(result);
     }
 
     /**

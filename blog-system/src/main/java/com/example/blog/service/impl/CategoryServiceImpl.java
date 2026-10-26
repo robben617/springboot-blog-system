@@ -28,9 +28,8 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 
     @Override
     public List<Category> listAll() {
-        return list(new LambdaQueryWrapper<Category>()
-                .orderByAsc(Category::getSort)
-                .orderByAsc(Category::getId));
+        // 前台分类入口需要展示各分类下的已发布文章数量，走带统计的查询
+        return baseMapper.selectAllWithCount();
     }
 
     @Override

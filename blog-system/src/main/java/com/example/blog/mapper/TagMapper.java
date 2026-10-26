@@ -25,11 +25,13 @@ public interface TagMapper extends BaseMapper<Tag> {
      * @return 文章简要信息分页数据
      */
     @Select("SELECT a.id AS id, a.title AS title, a.summary AS summary, a.cover AS cover, "
-            + "a.view_count AS viewCount, a.create_time AS createTime, "
+            + "a.view_count AS viewCount, a.category_id AS categoryId, c.name AS categoryName, "
+            + "a.create_time AS createTime, "
             + "a.user_id AS authorId, u.nickname AS authorNickname "
             + "FROM article_tag atg "
             + "JOIN article a ON a.id = atg.article_id "
             + "LEFT JOIN `user` u ON u.id = a.user_id "
+            + "LEFT JOIN category c ON c.id = a.category_id "
             + "WHERE atg.tag_id = #{tagId} AND a.deleted = 0 AND a.status = 1 "
             + "ORDER BY a.create_time DESC, a.id DESC")
     IPage<ArticleBriefVO> selectArticlePage(IPage<ArticleBriefVO> page, @Param("tagId") Long tagId);

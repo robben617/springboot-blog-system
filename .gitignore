@@ -9,9 +9,19 @@ out/
 # ---------- 编译产物 ----------
 target/
 build/
+dist/
+dist-ssr/
 *.class
 *.jar
 !**/maven-wrapper.jar
+
+# ---------- 前端依赖 ----------
+node_modules/
+.pnpm-store/
+.vite/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # ---------- 日志 ----------
 *.log
@@ -38,7 +48,8 @@ desktop.ini
 .workbuddy/
 
 # ---------- 运行时上传目录（本地生成，不入库） ----------
-blog-system/upload/
+upload/
+uploads/
 
 # ---------- 对外交付中转目录（内容为 blog-system 的打包副本，不入库） ----------
 交付给组员/
