@@ -56,3 +56,12 @@ vite.config.js.timestamp-*
 
 # ---------- 对外交付中转目录（内容为 blog-system 的打包副本，不入库） ----------
 交付给组员/
+
+# ---------- 本地数据库备份与自检临时文件 ----------
+db_backup/
+run-verify.log
+cookie_user.txt
+cookie_admin.txt
+
+# ---------- 老师发放的课程资料（含版权，不入公开仓库） ----------
+第二阶段学习.pdf

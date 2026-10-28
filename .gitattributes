@@ -1,0 +1,22 @@
+# 统一换行符，避免 Windows 与 Linux/macOS 互相污染
+* text=auto
+
+# Shell 脚本必须是 LF，否则在 Git Bash / Linux 下会报 "\r: command not found"
+*.sh   text eol=lf
+*.bash text eol=lf
+
+# Windows 批处理必须是 CRLF
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# 二进制文件不做换行转换
+*.jar  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.vsdx binary
+*.docx binary
+*.zip  binary
